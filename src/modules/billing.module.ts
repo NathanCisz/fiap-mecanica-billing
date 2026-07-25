@@ -4,6 +4,7 @@ import { PrismaService } from '../infrastructure/database/prisma.service';
 import { BudgetRepository } from '../infrastructure/repositories/budget.repository';
 import { PaymentRepository } from '../infrastructure/repositories/payment.repository';
 import { RabbitMQService } from '../infrastructure/messaging/rabbitmq.service';
+import { MercadoPagoService } from '../infrastructure/mercadopago/mercadopago.service';
 import {
   BillingLog,
   BillingLogSchema,
@@ -28,6 +29,7 @@ import { MESSAGING_PORT } from '../application/ports/messaging.port';
   providers: [
     PrismaService,
     RabbitMQService,
+    MercadoPagoService,
     { provide: BUDGET_REPOSITORY, useClass: BudgetRepository },
     { provide: PAYMENT_REPOSITORY, useClass: PaymentRepository },
     { provide: MESSAGING_PORT, useClass: RabbitMQService },
