@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: billing-db
+    restart: always
+    environment:
+      POSTGRES_USER: billing
+      POSTGRES_PASSWORD: billing123
+      POSTGRES_DB: billing_db
+    ports:
+      - '5433:5432'
+    volumes:
+      - billing_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U billing']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:7-jammy
+    container_name: billing-mongo
+    restart: always
+    ports:
+      - '27017:27017'
+    volumes:
+      - billing_mongo_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: billing-rabbitmq
+    restart: always
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: billing-api
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://billing:billing123@postgres:5432/billing_db?schema=public
+      MONGODB_URL: mongodb://mongodb:27017/billing_logs
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      JWT_SECRET: your-secret-shared-with-lambda
+      MERCADO_PAGO_ACCESS_TOKEN: your-mercado-pago-token
+      API_PREFIX: api/v1
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  billing_postgres_data:
+  billing_mongo_data:
+
+networks:
+  default:
+    name: billing-network

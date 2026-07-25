@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Budget {
+  id             String       @id @default(uuid())
+  serviceOrderId String       @unique
+  items          Json
+  totalAmount    Float
+  status         BudgetStatus @default(PENDING)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  payments Payment[]
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  budgetId      String
+  budget        Budget        @relation(fields: [budgetId], references: [id])
+  mercadoPagoId String?
+  amount        Float
+  status        PaymentStatus @default(PENDING)
+  paymentMethod String?
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum BudgetStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
