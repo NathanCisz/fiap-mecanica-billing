@@ -1,98 +1,102 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Billing Service — FiapMecanica
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Microsserviço responsável pelo gerenciamento de orçamentos e pagamentos da oficina mecânica.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Responsabilidades
 
-## Description
+- Geração e envio de orçamentos para aprovação
+- Registro e verificação de pagamentos via Mercado Pago
+- Atualização do status da OS após pagamento
+- Comunicação via RabbitMQ (mensageria assíncrona)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tecnologias
 
-## Project setup
+- Node.js 20+ / NestJS 10+ / TypeScript
+- PostgreSQL (banco relacional) via Prisma ORM
+- MongoDB (banco não relacional) — logs e auditoria
+- RabbitMQ — mensageria assíncrona
+- Mercado Pago — integração de pagamentos
+- Jest — testes unitários
+- Cucumber — testes BDD
+- Docker / Docker Compose
 
-```bash
-$ npm install
-```
+## Persistência Poliglota
 
-## Compile and run the project
+| Banco      | Uso                                           |
+| ---------- | --------------------------------------------- |
+| PostgreSQL | Orçamentos e pagamentos (dados transacionais) |
+| MongoDB    | Logs de eventos e auditoria                   |
 
-```bash
-# development
-$ npm run start
+## Arquitetura
 
-# watch mode
-$ npm run start:dev
+Hexagonal (Ports & Adapters):
 
-# production mode
-$ npm run start:prod
-```
+src/
+├── domain/ # Entidades e regras de negócio
+├── application/ # Use cases e ports (interfaces)
+├── infrastructure/ # Repositórios, mensageria, Mercado Pago
+├── presentation/ # Controllers e DTOs
+└── modules/ # Módulos NestJS
 
-## Run tests
+## Como rodar localmente
 
 ```bash
-# unit tests
-$ npm run test
+# Instalar dependências
+npm install
 
-# e2e tests
-$ npm run test:e2e
+# Subir bancos e RabbitMQ
+docker compose up -d postgres mongodb rabbitmq
 
-# test coverage
-$ npm run test:cov
+# Criar tabelas
+npx prisma db push
+
+# Iniciar em modo desenvolvimento
+npm run start:dev
 ```
 
-## Deployment
+## Endpoints
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+| Método | Rota                              | Descrição                  |
+| ------ | --------------------------------- | -------------------------- |
+| GET    | /api/v1/health                    | Health check               |
+| POST   | /api/v1/budgets                   | Criar orçamento            |
+| GET    | /api/v1/budgets                   | Listar orçamentos          |
+| GET    | /api/v1/budgets/:id               | Buscar orçamento           |
+| PUT    | /api/v1/budgets/:id/approve       | Aprovar/rejeitar orçamento |
+| POST   | /api/v1/payments                  | Criar pagamento            |
+| GET    | /api/v1/payments/:id              | Buscar pagamento           |
+| GET    | /api/v1/payments/budget/:budgetId | Pagamentos por orçamento   |
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Swagger: **http://localhost:3001/api/docs**
+
+## Testes
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Testes unitários
+npm test
+
+# Testes BDD
+npm run test:bdd
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## CI/CD
 
-## Resources
+GitHub Actions — `.github/workflows/ci-cd.yml`:
 
-Check out a few resources that may come in handy when working with NestJS:
+| Evento       | Testes | Build |
+| ------------ | ------ | ----- |
+| Push main    | ✅     | ✅    |
+| Push develop | ✅     | ❌    |
+| PR main      | ✅     | ❌    |
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Variáveis de ambiente
 
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```env
+DATABASE_URL=postgresql://billing:billing123@localhost:5433/billing_db
+MONGODB_URL=mongodb://localhost:27017/billing_logs
+RABBITMQ_URL=amqp://localhost:5672
+JWT_SECRET=your-secret
+MERCADO_PAGO_ACCESS_TOKEN=your-token
+PORT=3001
+API_PREFIX=api/v1
+```
